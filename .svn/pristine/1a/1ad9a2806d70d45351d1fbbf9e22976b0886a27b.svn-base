@@ -1,0 +1,382 @@
+package Cluedo;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+
+import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
+import javax.swing.ScrollPaneConstants;
+
+public class MainFrame extends JFrame {
+	private static Game game;// = GraphicalUserInterface.getGame();
+	private static JTextArea textOutput;
+	private final int imageWidth = 600;
+	private final int imageHeight = 730;
+	private static PlayerPanel outer;
+	private JPanel cardPanel;
+	private JPanel top;
+	private static final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+	GraphicalUserInterface gui;
+	
+	public MainFrame(GraphicalUserInterface gui, PlayerPanel outer){
+		this.gui = gui;
+		this.outer = outer;
+		setUpInterface();
+	}
+	public MainFrame(Game game){
+		if(game!=null)System.out.println("ITS HERE MAIN");
+	this.game = game;}
+	
+	
+	public void setUpInterface() {
+		//WINDOW
+		this.setTitle("Cluedo");
+		this.setSize(imageWidth+20, imageHeight+20);				//SIZE
+		this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
+		//PANELS
+		top = new JPanel(new BorderLayout());
+		JPanel bottom = new JPanel(new BorderLayout());
+		//outer = new PlayerPanel();
+		JPanel left = new JPanel();
+		JPanel textPanel = new JPanel();
+		cardPanel = new JPanel();
+		cardPanel.setLayout(new BoxLayout(cardPanel, BoxLayout.X_AXIS));
+
+		JScrollPane scroll = new JScrollPane(cardPanel);
+		scroll.setPreferredSize(new Dimension(80*5,120));
+		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
+		//centre = new JPanel();
+		//centre.setPreferredSize(new Dimension(400,400));
+		//outer.add(centre,BorderLayout.CENTER);
+
+		outer.setPreferredSize(new Dimension(400,400));
+		top.setLayout(new FlowLayout());
+		bottom.add(scroll, BorderLayout.EAST);
+		bottom.add(left, BorderLayout.WEST);
+		bottom.add(textPanel, BorderLayout.SOUTH);
+		this.add(outer,BorderLayout.CENTER);
+		this.add(top, BorderLayout.NORTH);
+		this.add(bottom, BorderLayout.SOUTH);
+		this.setSize(imageWidth, imageHeight);
+
+		//COMPONENTS
+		JButton diceButton = new JButton("Dice");
+		JButton nextButton = new JButton("Next");
+		textOutput = new JTextArea(5, 50);
+		textOutput.setEditable(false);
+		JScrollPane textSP = new JScrollPane(textOutput);
+		textSP.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+
+		//MENU COMPONENTS
+		JMenuBar menuBar = new JMenuBar();
+		JMenu gameMenu = new JMenu("Game");
+		JMenu infoMenu = new JMenu("Info");
+		JMenuItem shortCutsInfo = new JMenuItem("View Short Cut Keys");		//MENU ITEMS
+		JMenuItem quit = new JMenuItem("Quit");	
+		JMenuItem newGame = new JMenuItem("New Game");
+		JMenuItem playersGame = new JMenuItem("Players");
+		JMenuItem gameType = new JMenuItem("Game Mode");
+
+		//ADD COMPONENTS
+		left.add(diceButton, BorderLayout.WEST);
+		left.add(nextButton,BorderLayout.WEST);
+		textPanel.add(textSP,BorderLayout.PAGE_END);
+		this.setJMenuBar(menuBar);							//MENU										
+		infoMenu.add(shortCutsInfo);
+		gameMenu.add(newGame);
+		gameMenu.add(gameType);
+		gameMenu.add(playersGame);
+		gameMenu.add(quit);
+		menuBar.add(gameMenu);
+		menuBar.add(infoMenu);
+
+		//KEYBOARD SHORTCUTS 
+		//Next Player = n 
+		nextButton.setMnemonic('N');
+		nextButton.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put( KeyStroke.getKeyStroke('n'), "Next" );
+		nextButton.getActionMap().put("Next", new ClickAction(nextButton));
+		//Dice roll = d
+		diceButton.setMnemonic('D');
+		diceButton.getInputMap(JButton.WHEN_IN_FOCUSED_WINDOW).put( KeyStroke.getKeyStroke('d'), "Dice" );
+		diceButton.getActionMap().put("Dice", new ClickAction(diceButton));
+		//New Game = ctrl + n
+		newGame.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+		//Quit  = ctrl + q
+		quit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, ActionEvent.CTRL_MASK));
+		//To see Players = ctrl + p
+		playersGame.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
+		//To view Short cut keys = ctrl + v
+		shortCutsInfo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+		//To view Short cut keys = ctrl + v
+		gameType.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
+
+
+		//ACTION LISTENERS
+		diceButton.addActionListener(new ActionListener() {			//DICE
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(game==null)System.out.println("ITS HERE MAIN" +game);
+				if(game!=null){
+					//roll dice
+					if(!outer.getRolled()){
+						outer.setRolled(true);
+						textOutput.append("Tip: To go into a room click the door.\n");
+						game.play();
+					}
+				}		
+				else{System.out.println("This breaks");}
+			}});
+		nextButton.addActionListener(new ActionListener() {			//NEXT
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					if(!outer.getCanMove()){
+						game.next();
+						gui.drawHand();
+						textOutput.setText(null);
+						textOutput.append(Game.getCurrent().getCharName() +"'s turn\n");
+						outer.setRolled(false);
+						outer.setCanMove(true);
+						Game.getCurrent().setRoll(0);
+						PlayerPanel.setMoveCount(0);
+						outer.redraw();
+					}
+					else{
+						textOutput.append("You still have moves to use up!\n");
+					}
+				} catch(NullPointerException e1){}
+			}
+		});
+		//MENU ACTION LISTENERS
+		playersGame.addActionListener(new ActionListener(){					//PLAYERS
+			@Override
+			public void actionPerformed(ActionEvent arg0){
+				viewPlayers();
+			}
+		});
+		newGame.addActionListener(new ActionListener(){						//NEW GAME
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				// Ask the user to confirm they wanted to do this
+				int r = JOptionPane.showConfirmDialog(getFrame(), new JLabel(
+						"Are you sure you want to start a new game? \nYour previous game will be lost."), "Confirm Exit",
+						JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (r == JOptionPane.YES_OPTION) {
+					Game.getPlayers().clear();
+					outer.getWeaponImages().clear();
+					gui.reset();
+					gui.setUpPlayers();
+					outer.setUpWeaponImages();
+					outer.setCanMove(true);
+					outer.setRolled(false); 
+					PlayerPanel.setMoveCount(0);
+					outer.redraw();
+				}
+			}
+		});
+		quit.addActionListener(new ActionListener() {						//QUIT 
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				//Confirmation popup 
+				int r = JOptionPane.showConfirmDialog(getFrame(), new JLabel(
+						"Are you sure you want Quit? \nYour previous game will be lost."), "Confirm Exit",
+						JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (r == JOptionPane.YES_OPTION) {
+					System.exit(0);
+				}
+			}
+		});
+		shortCutsInfo.addActionListener(new ActionListener() {				//SHORTCUTS
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				viewShortCuts();
+			}
+		});
+		gameType.addActionListener(new ActionListener() {					//GAME MODE
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				textOrGUI();
+			}
+		});
+
+		this.addWindowListener(new WindowListener() {						//WINDOW LISTENER
+			public void windowClosed(WindowEvent e) {}
+			public void windowActivated(WindowEvent e) {}
+			public void windowOpened(WindowEvent e) {}
+			public void windowIconified(WindowEvent e) {}
+			public void windowDeiconified(WindowEvent e) {}
+			public void windowDeactivated(WindowEvent e) {}
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// Ask the user to confirm they wanted to do this
+				int r = JOptionPane.showConfirmDialog(getFrame(), new JLabel(
+						"Are you sure you want to quit Cluedo?"), "Confirm Exit",
+						JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				if (r == JOptionPane.YES_OPTION) {
+					System.exit(0);
+				}
+			}
+		});
+
+		this.setVisible(true);
+	}
+	
+	public void viewShortCuts(){
+		final JFrame window = new JFrame("Short Cuts");
+		//PANELS
+		JPanel shortCutPanel = new JPanel();
+		JPanel confirmPanel = new JPanel();
+		JPanel topPanel = new JPanel();
+		//BUTTONS
+		JButton confirm = new JButton("Confirm");
+		//ADDITIONS
+		Font font = new Font("Times new roman", Font.ITALIC, 32);
+		JLabel title = new JLabel("SHORT CUTS");
+		title.setFont(font);
+		topPanel.add(title);
+		JLabel dice = new JLabel("Roll Dice = Keys: d\n");
+		JLabel nextPlayer = new JLabel("Next Player = Keys: n\n");
+		JLabel newGame = new JLabel("New Game = Keys: Ctrl + n\n");
+		JLabel players = new JLabel("View Players = Keys: Ctrl + p\n");
+		JLabel quit = new JLabel("Quit Game = Keys: Ctrl + q\n");
+		JLabel shortCuts = new JLabel("View Short Cuts = Keys: Ctrl + v\n");
+		JLabel gameType = new JLabel("Choose Game Type = Keys: Ctrl + g\n");
+		shortCutPanel.add(dice);
+		shortCutPanel.add(nextPlayer);
+		shortCutPanel.add(newGame);
+		shortCutPanel.add(players);
+		shortCutPanel.add(quit);
+		shortCutPanel.add(shortCuts);
+		shortCutPanel.add(gameType);
+		confirmPanel.add(confirm);
+		//LAYOUTS
+		window.add(topPanel, BorderLayout.NORTH);
+		window.add(shortCutPanel, BorderLayout.CENTER);
+		window.add(confirmPanel, BorderLayout.SOUTH);
+		//ACTION LISTENER
+		confirm.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) { window.dispose(); }
+		});
+		window.setSize(220,280);
+		window.setResizable(false);
+		window.setBounds(screenSize.width/2 - window.getWidth()/2, this.getHeight()/2 - window.getHeight()/2, window.getWidth(), window.getHeight());
+		window.setVisible(true);		
+	}
+	
+	public void textOrGUI(){
+		String[] buttons = { "Text", "Graphical User Interface" };
+		//Text or GUI based 
+		int textOrGui = JOptionPane.showOptionDialog(this, "Please choose a Game Type.", "Cluedo Game Type",
+				JOptionPane.WARNING_MESSAGE, JOptionPane.WARNING_MESSAGE, null, buttons, buttons[1]);
+		if (textOrGui == JOptionPane.YES_OPTION) {
+			this.dispose();
+			Game.textBased = true;
+			Game.getPlayers().clear();
+			Game.setPlayers(0);
+			game = new Game(true);
+		} 
+	}
+	public void viewPlayers(){
+		final JFrame window = new JFrame("Players");
+		//PANELS
+		JPanel playerPanel = new JPanel();
+		JPanel confirmPanel = new JPanel();
+		JPanel imagePanel = new JPanel();
+		JPanel topPanel = new JPanel();
+		//BUTTONS
+		JButton confirm = new JButton("Confirm");
+		//ADDITIONS
+		Font font = new Font("Times new roman", Font.ITALIC, 32);
+		JLabel title = new JLabel("PLAYERS");
+		title.setFont(font);
+		topPanel.add(title);
+		for (Player players: Game.getPlayers()){
+			JLabel image = new JLabel();
+			JLabel label = new JLabel(String.format("Player %d: %s has the character %s\n",(players.getPlayerNumber()+1)
+					, players.getName().toString(), players.getCharName().toString()));
+			if (players.getCharName().toString().equals("Kasandra Scarlett")){image.setIcon(getImage("scarlett.png"));}
+			else if (players.getCharName().toString().equals("Jack Mustard")){image.setIcon(getImage("mustard.png"));}
+			else if (players.getCharName().toString().equals("Diane White")){image.setIcon(getImage("white.png"));}
+			else if (players.getCharName().toString().equals("Jacob Green")){image.setIcon(getImage("green.png"));}
+			else if (players.getCharName().toString().equals("Eleanor Peacock")){image.setIcon(getImage("peacock.png"));}
+			else if (players.getCharName().toString().equals("Victor Plum")){image.setIcon(getImage("plum.png"));}
+			imagePanel.add(image);
+			playerPanel.add(label);
+
+		}
+		confirmPanel.add(confirm);
+		//LAYOUTS
+		imagePanel.setPreferredSize(new Dimension(30,window.getHeight()));
+		window.add(topPanel, BorderLayout.NORTH);
+		window.add(imagePanel, BorderLayout.WEST);
+		window.add(playerPanel, BorderLayout.CENTER);
+		window.add(confirmPanel, BorderLayout.SOUTH);
+		//ACTION LISTENER
+		confirm.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) { window.dispose(); }
+		});
+		window.setSize(400,300);
+		window.setResizable(false);
+		window.setBounds(screenSize.width/2 - window.getWidth()/2, imageHeight/2 - window.getHeight()/2, window.getWidth(), window.getHeight());
+		window.setVisible(true);
+	}
+	
+	public int getHeight(){
+		return imageHeight;
+	}
+	public int getWight(){
+		return imageWidth;
+	}
+	public static JTextArea getText(){
+		return textOutput;
+	}
+	
+	public class ClickAction extends AbstractAction {
+		private JButton button;
+		public ClickAction(JButton button) {
+			this.button = button;
+		}
+		public void actionPerformed(ActionEvent e) {
+			button.doClick();
+		}
+	}
+	public final JFrame getFrame(){
+		return this;
+	}
+	
+	public final JPanel getCardPanel(){
+		return cardPanel;
+	}
+	public final JPanel getTop(){
+		return top;
+	}
+	public ImageIcon getImage(String file){
+		ImageIcon image = new ImageIcon(getClass().getResource(file));
+		return image;
+	}
+
+}

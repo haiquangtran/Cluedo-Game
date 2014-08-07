@@ -1,0 +1,169 @@
+package Cluedo;
+
+import java.io.ObjectInputStream.GetField;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
+/**
+ * This class sets up the core fundamentals of the game,
+ * meaning it asks how many players there will be, sets up
+ * the Solution, the Deck and the Hands of each player, depending
+ * on how many players join the game (3-6). 
+ * 
+ * @author Quang Tran, Crystal Johnston
+ *
+ */
+public class Game {
+	private static int playerCount = 0;
+	public static boolean gameWon = false;
+	public static Solution solution;
+	public final static Deck deck = new Deck();				//Set up Deck
+	private static Player current;
+	private static int count =0;
+	private static ArrayList<Player> players = new ArrayList<Player>();	//Players in the game, will be used for player turns (rotations)
+	//Text Based or GUI based
+	public static boolean textBased = false;
+
+	//Characters that are assigned to each player	CURRENTLY NOT USED
+	private static ArrayList<Characters> characters = new ArrayList<Characters>();
+	public Game(boolean text){
+		characters.clear();
+		setUpGame();
+		Board board = new Board(true);		//Set up Board
+		if(text){
+			while(!gameWon){				//Player Rotations (Turns)
+				play();
+				next();}
+			if(gameWon || players.isEmpty()){
+				System.out.println("Game Over");
+				System.exit(0); 			//Finishes game
+			}
+		}
+	}
+
+
+	/**
+	 * Sets up core fundamentals in the game of cluedo, 
+	 * This involves creating a new deck, creating a solution, 
+	 * assigning remaining cards to each player
+	 * and intialising each player.
+	 *  
+	 */
+	private void setUpGame() {
+		if(Game.textBased){
+			System.out.println("Number of Players (3-6): ");
+
+			Scanner scan = new Scanner(System.in);	//Scanner
+
+			while (playerCount == 0){				//Takes in the amount of players
+				if (scan.hasNextInt()){ 			
+					playerCount = scan.nextInt();
+					if (playerCount < 3 || playerCount > 6){
+						playerCount = 0;			//Keeps looping if not in the limits of 3-6 players
+						System.out.println("Enter in number of players (3-6).");
+					}
+				}
+				else { System.out.println("Enter in number of players (3-6).");	}
+			}
+			System.out.println(playerCount+" players have entered the game. \n");
+		}
+		//SOLUTION
+		Characters murderer = null;
+		Room murderRoom = null;
+		Weapon murderWeapon = null;
+		for (Card cards: deck.getDeck()){			//Go through all cards in deck
+			if (murderer != null && murderRoom != null && murderWeapon != null){ break; }	
+			if (cards instanceof Characters){		//Finds first Character and makes it murderer (Shuffled First so its random)
+				murderer = (Characters) cards;
+			} else if (cards instanceof Room){      //Finds first Room and makes it murder Room (Shuffled First so its random)
+				murderRoom = (Room) cards;
+			} else if (cards instanceof Weapon){	//Finds first Weapon and makes it murder Weapon (Shuffled First so its random)
+				murderWeapon = (Weapon) cards;
+			}
+		}
+		deck.getDeck().remove(murderer);
+		deck.getDeck().remove(murderWeapon);
+		deck.getDeck().remove(murderRoom);
+		solution = new Solution(murderRoom, murderWeapon, murderer);
+		if(Game.textBased){
+			//Goes through players
+			for (int i = 1; i <= playerCount; i++){
+				players.add(new Player(i, deck.getCharacters().remove(0), null));				//Assign character to each player (Removes from char list)
+				CanvasPanel.getText().append("Player " +i+ ": "+players.get(i-1).getCharName()+"\n");	//Print players
+			}
+		}
+		//Assign cards to each player
+		for(int i =0; i<deck.getDeck().size() - playerCount; i+=playerCount){
+			players.get(0).getHand().add(deck.getDeck().get(i));
+			players.get(1).getHand().add(deck.getDeck().get(i+1));
+			players.get(2).getHand().add(deck.getDeck().get(i+2));
+			if(players.size()==4){
+				players.get(3).getHand().add(deck.getDeck().get(i+3));
+			}
+			if(players.size()==5){
+				players.get(4).getHand().add(deck.getDeck().get(i+4));
+			}
+			if(players.size()==6){
+				players.get(5).getHand().add(deck.getDeck().get(i+5));
+			}
+		}
+	}
+
+	/**
+	 * Returns a list of Players in the game
+	 * @return List of players in the game.
+	 */
+	public static ArrayList<Player> getPlayers(){
+		return players;
+	}
+
+
+	/**
+	 * Determines what the current player has rolled on the dice (1-6),
+	 * which determines how far he/she can move on the board. 
+	 */
+	public void play(){
+		getCurrent().roll();
+	}
+
+	/**
+	 * Causes one clockwise rotation.
+	 * Gets the next player and makes it his turn. 
+	 * @return Returns the index of the next player.
+	 */
+	public int next(){
+		if(count< Game.getPlayers().size()-1) count++;
+		else count =0;
+		return count;
+	}
+
+	/**
+	 * Returns the Current player in the rotation.
+	 * @return Current player
+	 */
+	public static Player getCurrent(){
+		if (!Game.textBased && players.isEmpty()){ 
+			JOptionPane.showMessageDialog(GraphicalUserInterface.getFrame(), 
+					new JLabel(("The Game is over! No one has won!")));
+			return null;
+		}
+		current = Game.getPlayers().get(count);
+		return current;
+	}
+	public static void setPlayers(int p){
+		playerCount = p;
+	}
+	public static int getPlayerCount(){
+		return playerCount;
+	}
+
+	/**
+	 * Returns the Character tokens used in the game
+	 */
+	public static ArrayList<Characters> getCharacters(){
+		return characters;
+	}
+}

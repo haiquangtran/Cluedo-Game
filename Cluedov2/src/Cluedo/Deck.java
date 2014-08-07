@@ -1,0 +1,77 @@
+package Cluedo;
+import java.util.ArrayList;
+import java.util.Collections;
+
+/**
+ * This class represents a Deck in the Game of Cluedo,
+ * It contains different types of cards such as Character, Room and Weapon cards. 
+ * Everytime a new deck is made, it is always shuffled. 
+ * This class also contains a list of characters that will be assigned to 
+ * each Player depending on the amount of players that join the game. 
+ * 
+ * @author Quang Tran, Crystal Johnston
+ *
+ */
+public class Deck {
+	//Deck
+	private final static ArrayList<Card> deck = new ArrayList<Card>();
+	private static ArrayList<Characters> characters = new ArrayList<Characters>();
+
+	//Construct Deck
+	public Deck(){
+		deck.clear();
+		constructDeck();
+		Collections.shuffle(deck);								//Shuffle Deck
+	}
+	
+	/**
+	 * Returns the Deck containing all the cards
+	 * @return Returns the Deck containing all the cards.
+	 */
+	public ArrayList<Card> getDeck(){
+		return deck;
+	}
+	
+	
+	/**
+	 * Constructs the deck, adds all the types of different cards to the deck.
+	 */
+	public void constructDeck(){
+		for (String peopleNames: people){						//Initialize Characters List
+			Characters person = new Characters(peopleNames);
+			characters.add(person);
+			deck.add(person);
+		}
+		for (String wepNames: weps){
+			deck.add(new Weapon(wepNames));						//Initialize Weapons List
+		}
+		for (String roomNames: room){
+			deck.add(new Room(roomNames));						//Initialize Rooms List
+		}
+	}
+	
+	public ArrayList<Characters> getCharacters(){
+		return characters;
+	}
+	/**
+	 * All the possible Characters in the game Cluedo.
+	 * Note: Public because we need rooms for suggestion and accusation. 
+	 */
+	public final static String[] people ={
+		"Kasandra Scarlett","Jack Mustard","Diane White","Jacob Green","Eleanor Peacock","Victor Plum"
+	};
+	
+	/**
+	 * All the possible Weapons in the game Cluedo.
+	 * Note: Public because we need rooms for suggestion and accusation. 
+	 */
+	public final static String[] weps ={"Rope","Candlestick","Knife","Pistol","Baseball Bat",
+		"Dumbbell","Trophy", "Poison","Axe"};
+	
+	/**
+	 * All the possible Rooms in the game Cluedo.
+	 * Note: Public because we need rooms for suggestion and accusation. 
+	 */
+	public final static String[] room={"Spa","Theatre","Living Room","Observatory","Hall",
+		"Guest house","Dining Room", "Kitchen","Patio","Pool"};
+}

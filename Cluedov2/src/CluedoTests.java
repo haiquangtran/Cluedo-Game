@@ -1,0 +1,165 @@
+
+import static org.junit.Assert.fail;
+
+import org.junit.Test;
+
+import Cluedo.Board;
+import Cluedo.BoardPanel;
+import Cluedo.Card;
+import Cluedo.Characters;
+import Cluedo.Deck;
+import Cluedo.Game;
+import Cluedo.GraphicalUserInterface;
+import Cluedo.Room;
+import Cluedo.Solution;
+import Cluedo.Weapon;
+
+
+/**
+ * Class used to test the Cluedo Game Program. 
+ * J-unit tests.
+ * 
+ * @author Quang Tran, Crystal Johnston
+ *
+ */
+public class CluedoTests {
+
+	/**
+	 * Board Tests
+	 */
+
+	@Test
+	public void test_Board_1(){		//Test Dimensions of board
+		Board board = new Board(false);
+		if (board.board.length == 29 && board.boardSize == 25){}
+		else {
+			System.out.println("Board is not correct dimensions.");
+		}
+	}
+
+	@Test
+	public void test_Board_2(){		//Test characters in board that aren't represented. 
+		Board board = new Board(false);
+		for (int i = 0; i < board.board.length; i++){
+			for(int j = 0; j < board.boardSize; j++){
+				if (board.board[i][j] < 0 || board.board[i][j] > 19){	//Out of bounds
+					fail("Board contains values that arent represented. ");
+				}
+			}
+		}
+	}
+
+	/**
+	 * Card Tests
+	 */
+
+	@Test
+	public void test_Card_1(){		//Test Character methods
+		Characters john = new Characters("John");
+		if (john.toString().equals("John")){}
+		else {
+			fail("Method not working proberly.");
+		}
+	}
+
+	@Test
+	public void test_Card_2(){		//Test Weapon methods
+		Weapon wep = new Weapon("Axe");
+		if (wep.toString().equals("Axe")){}
+		else {
+			fail("Method not working proberly.");
+		}
+	}
+
+	@Test
+	public void test_Card_3(){		//Test Room methods
+		Room room = new Room("slumber");
+		if (room.toString().equals("slumber")){}
+		else {
+			fail("Method not working proberly.");
+		}
+	}
+
+	@Test 
+	public void test_Card_4(){		//Tests the Cards
+		Room room = new Room("slumber");
+		Weapon wep = new Weapon("Axe");
+		Characters john = new Characters("John");
+		if (room instanceof Card && wep instanceof Card && john instanceof Card){}
+		else{
+			fail("Should be instances of Card.");
+		}
+	}
+
+	/**
+	 * Solution Tests
+	 */
+	@Test
+	public void test_Solution_1(){		//Test Solution methods
+		Solution solution = new Solution(new Room("room"),new Weapon("wep"), new Characters("char"));
+		if (solution.toString().equals("murderer = char, murder Weapon = wep, murder Room = room.")){}
+		else {
+			fail("Method not working proberly.");
+		}
+	}
+
+	@Test
+	public void test_Solution_2(){		//Test Solution methods
+		Solution solution = new Solution(new Room("room"),new Weapon("wep"), new Characters("char"));
+		if (solution.getMurderer().toString().equals("char") && solution.getMurderWeapon().toString().equals("wep") && solution.getMurderRoom().toString().equals("room")){}
+		else {
+			fail("Method not working proberly.");
+		}
+	}
+
+
+	/**
+	 * Deck Tests
+	 */
+	@Test
+	public void test_Deck_1(){			//Test All cards in the deck.
+		Deck deck = new Deck();
+		System.out.println(deck.getDeck().size());
+		if (deck.getDeck().size() == 25){}
+		else{
+			fail("Missing some cards in the deck.");
+		}
+	}
+
+	@Test
+	public void test_Deck_2(){			//Test Characters cards in the deck.
+		Deck deck = new Deck();
+		if (deck.people.length== 6){}
+		else{
+			fail("Missing some Character cards in the deck.");
+		}
+	}
+
+	@Test
+	public void test_Deck_4(){			//Test Weapons cards in the deck.
+		Deck deck = new Deck();
+		if (deck.weps.length == 9){}
+		else{
+			fail("Missing some Weapon cards in the deck.");
+		}
+	}
+
+	@Test
+	public void test_Deck_5(){			//Test Room cards in the deck.
+		Deck deck = new Deck();
+		if (deck.room.length == 10){}
+		else{
+			fail("Missing some Room cards in the deck.");
+		}
+	}
+
+	@Test
+	public void test_Game(){			//Tests game is set up propely
+		GraphicalUserInterface gui= new GraphicalUserInterface();
+		if(gui.getBoard()==null){
+			fail("Game set up failed.");
+		}
+	}
+
+	
+}

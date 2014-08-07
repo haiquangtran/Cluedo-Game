@@ -1,0 +1,465 @@
+package Cluedo;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.GridLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.swing.AbstractAction;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.KeyStroke;
+import javax.swing.ScrollPaneConstants;
+
+public class GraphicalUserInterface{
+	private static final int imageWidth = 600;
+	private static final int imageHeight = 730;
+	private static CanvasPanel frame;
+	private JFrame radio;
+	private JFrame corner;
+	private static Game game;
+	private boolean increase = false;
+	//Used for adding of players
+	private int numPlayers = 0;
+	private int playerCount = 0;
+	private static BoardPanel outer;
+	private JLabel turnText = new JLabel();
+	private static final Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+
+	public GraphicalUserInterface() {
+		frame = new CanvasPanel(this,(outer = new BoardPanel()));
+		//Popup position of frame
+		frame.setBounds(screenSize.width/2 - imageWidth/2, 0, imageWidth, imageHeight);
+
+		frame.textOrGUI();
+		if (!Game.textBased){
+			setUpPlayers();
+		} 
+	}
+
+	
+	public void setUpPlayers(){
+		//RESET
+		numPlayers = 0; 
+		playerCount = 0;
+		//STARTING GAME RADIO
+		radio = new JFrame ("Players");
+		radio.setSize(250,100);
+		radio.setResizable(false);
+		final JRadioButton three = new JRadioButton("3");
+		three.setActionCommand("3");
+		final JRadioButton four = new JRadioButton("4");
+		four.setActionCommand("4");
+		final JRadioButton five = new JRadioButton("5");
+		five.setActionCommand("5");
+		final JRadioButton six = new JRadioButton("6");
+		six.setActionCommand("6");
+		ButtonGroup group = new ButtonGroup();
+		group.add(three);
+		group.add(four);
+		group.add(five);
+		group.add(six);
+		JButton selectPlayers = new JButton("Select number");
+		//ACTION LISTENER FOR SELECT PLAYERS
+		selectPlayers.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae) {
+				numPlayers = 0; 					//Reset
+				if(three.isSelected()||four.isSelected()||
+						five.isSelected()||six.isSelected()){
+					if (three.isSelected()){
+						Game.setPlayers(3);  
+						numPlayers = 3;
+					}else if (four.isSelected()){
+						Game.setPlayers(4);
+						numPlayers = 4;
+					}else if (five.isSelected()){
+						Game.setPlayers(5);
+						numPlayers = 5;
+					}else if (six.isSelected()){
+						Game.setPlayers(6);
+						numPlayers = 6;
+					}
+					radio.dispose();				//Exit the radio menu
+					setUpCharacterSelection();		//CHARACTER SELECTION
+				} 
+			}
+		});
+		//ADDITIONS
+		JPanel radioPanel = new JPanel(); 
+		radioPanel.add(three);
+		radioPanel.add(four);
+		radioPanel.add(five);
+		radioPanel.add(six);
+		radioPanel.add(selectPlayers);
+		radio.add(radioPanel);
+		radio.setBounds(screenSize.width/2 - radio.getWidth()/2, imageHeight/2 - radio.getHeight()/2, radio.getWidth(), radio.getHeight());
+		radio.setVisible(true);
+
+	}
+	//Game
+	private void setUpCharacterSelection(){		
+		//PLAYERS WINDOW
+		final JFrame window = new JFrame("Player " + (playerCount+1) + " :");
+		window.setLayout(new BorderLayout());
+		final JTextField name = new JTextField(15);
+		//RADIO NAMES
+		final JRadioButton scarlett = new JRadioButton("Kasandra Scarlett");
+		final JRadioButton mustard = new JRadioButton("Jack Mustard");
+		final JRadioButton white = new JRadioButton("Diane White");
+		final JRadioButton green = new JRadioButton("Jacob Green");
+		final JRadioButton peacock = new JRadioButton("Eleanor Peacock");
+		final JRadioButton plum = new JRadioButton("Victor Plum");
+		final JButton selectPlayers = new JButton("Done");
+
+		//Grey out already used Characters
+		for (Characters people: Game.getCharacters()){
+			if (people.toString().equalsIgnoreCase(scarlett.getText())){scarlett.setEnabled(false);}
+			if (people.toString().equalsIgnoreCase(mustard.getText())){mustard.setEnabled(false);}
+			if (people.toString().equalsIgnoreCase(white.getText())){white.setEnabled(false);}
+			if (people.toString().equalsIgnoreCase(green.getText())){green.setEnabled(false);}
+			if (people.toString().equalsIgnoreCase(peacock.getText())){peacock.setEnabled(false);}
+			if (people.toString().equalsIgnoreCase(plum.getText())){plum.setEnabled(false);}
+		}
+		//DONE ACTION LISTENER
+		selectPlayers.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent ae) {
+				//Does not allow duplicate names in the game.
+				boolean duplicate = false;
+				for (Player players: Game.getPlayers()){
+					if (players.getName().toString().equalsIgnoreCase(name.getText())){
+						CanvasPanel.getText().append("There is another player with the same name, please choose another.\n");
+						duplicate = true;
+						break;
+					}
+				}
+				//Makes sure the user enters a name and selects a character
+				if(!duplicate && !name.getText().equals("") && (scarlett.isSelected()||mustard.isSelected()||white.isSelected()||
+						green.isSelected()||  peacock.isSelected()||plum.isSelected())){
+					Characters current = null;
+					if (scarlett.isSelected()){
+						current = new Characters("Kasandra Scarlett");
+						Game.getPlayers().add(new Player(playerCount++, current, name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Kasandra Scarlett.\n"
+								, (playerCount),name.getText()));
+						scarlett.setEnabled(false);
+					}else if (mustard.isSelected()){
+						current = new Characters("Jack Mustard");
+						Game.getPlayers().add(new Player(playerCount++, current,name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Jack Mustard.\n"
+								, (playerCount),name.getText()));
+						mustard.setEnabled(false);
+					}else if (white.isSelected()){
+						current = new Characters("Diane White");
+						Game.getPlayers().add(new Player(playerCount++, current,name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Diane White.\n"
+								, (playerCount),name.getText()));
+						white.setEnabled(false);
+					}else if (green.isSelected()){
+						current =  new Characters("Jacob Green");
+						Game.getPlayers().add(new Player(playerCount++,current,name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Jacob Green.\n"
+								, (playerCount),name.getText()));
+						green.setEnabled(false);
+					}else if (peacock.isSelected()){
+						current = new Characters("Eleanor Peacock");
+						Game.getPlayers().add(new Player(playerCount++, current,name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Eleanor Peacock.\n"
+								, (playerCount),name.getText()));
+						peacock.setEnabled(false);
+					}else if (plum.isSelected()){
+						current = new Characters("Victor Plum");
+						Game.getPlayers().add(new Player(playerCount++, current,name.getText()));
+						CanvasPanel.getText().append(String.format("Player %d - %s has joined the game with Victor Plum.\n"
+								, (playerCount),name.getText()));
+						plum.setEnabled(false);
+					}
+					Game.getCharacters().add(current);
+					duplicate = false;
+					window.dispose();		//exit window
+					if (playerCount < numPlayers){
+						setUpCharacterSelection();	//Recursive - Opens up same amount of windows as players.
+					} else {
+						CanvasPanel.getText().append("All players have joined the game. Let the game now commence!\n");
+						game = new Game(false);
+						new CanvasPanel(game);
+						outer.redraw();
+						drawHand();
+					}
+				} 
+			}
+		});
+		//Button ADDITIONS
+		ButtonGroup group = new ButtonGroup();
+		group.add(scarlett);
+		group.add(mustard);
+		group.add(peacock);
+		group.add(white);
+		group.add(plum);
+		group.add(green);
+
+		JPanel panel = new JPanel();
+		JPanel topPanel = new JPanel();
+		topPanel.add(new JLabel("Player enter your name"));
+		topPanel.add(name);
+		panel.add(new JLabel("Choose a Character"));
+		panel.add(scarlett);
+		panel.add(mustard);
+		panel.add(white);
+		panel.add(green);
+		panel.add(peacock);
+		panel.add(plum);
+		window.add(topPanel, BorderLayout.NORTH);
+		window.add(panel,BorderLayout.WEST);
+		window.add(selectPlayers, BorderLayout.SOUTH);
+		window.setResizable(false);
+		//DIMENSIONS
+		topPanel.setPreferredSize(new Dimension(150, 60));
+		panel.setPreferredSize(new Dimension(150,300));
+		window.setSize(250,350);
+		window.setBounds(screenSize.width/2 - window.getWidth()/2, imageHeight/2 - window.getHeight()/2, window.getWidth(), window.getHeight());
+		window.setVisible(true);
+	}
+	//Game
+	public void reset(){
+		CanvasPanel.getText().setText(null);
+		Game.getCharacters().clear();
+	}
+	//main
+	public static JTextArea getText(){
+		return CanvasPanel.getText();
+	}
+	//player
+	public ImageIcon getImage(String file){
+		ImageIcon image = new ImageIcon(getClass().getResource(file));
+		return image;
+	}
+	//player
+	public void drawHand(){
+		frame.getCardPanel().removeAll();
+		frame.getTop().removeAll();
+		turnText.setText(Game.getCurrent().getName()+": " + Game.getCurrent().getCharName() + "'s Turn");
+		Font font = new Font("Times new roman", Font.BOLD + Font.ITALIC, 20);
+		turnText.setFont(font);
+		JLabel icon = new JLabel();
+		if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Kasandra Scarlett")){
+			icon.setIcon((getImage("scarlett.png")));
+		} else if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Jack Mustard")){
+			icon.setIcon((getImage("mustard.png")));
+		} else if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Diane White")){
+			icon.setIcon((getImage("white.png")));
+		} else if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Jacob Green")){
+			icon.setIcon((getImage("green.png")));
+		} else if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Eleanor Peacock")){
+			icon.setIcon((getImage("peacock.png")));
+		} else if (Game.getCurrent().getCharName().toString().equalsIgnoreCase("Victor Plum")){
+			icon.setIcon((getImage("plum.png")));
+		}
+		frame.getTop().add(icon, BorderLayout.WEST);
+		frame.getTop().add(turnText,BorderLayout.CENTER);
+		GridLayout grid = new GridLayout(0, Game.deck.getDeck().size()/(Game.getPlayers().size()));
+		JLabel[] cards = new JLabel[Game.deck.getDeck().size()/(Game.getPlayers().size())];
+
+		for (int i =0; i < Game.getCurrent().getHand().size(); i++){
+			cards[i] = new JLabel();
+			frame.getCardPanel().add(cards[i]);
+			//Characters
+			if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Kasandra Scarlett")){ cards[i].setIcon(( getImage("scarCard.png")));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Jack Mustard")){cards[i].setIcon(getImage("musCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Diane White")){ cards[i].setIcon(getImage("whiCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Jacob Green")){ cards[i].setIcon(getImage("greCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Eleanor Peacock")){ cards[i].setIcon(getImage("peaCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Victor Plum")){ cards[i].setIcon(getImage("pluCard.png"));}
+			//Weapons
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Rope")){cards[i].setIcon(getImage("ropeCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Candlestick")){ cards[i].setIcon(getImage("candleCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Knife")){ cards[i].setIcon(getImage("knifeCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Pistol")){ cards[i].setIcon(getImage("gunCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Baseball Bat")){ cards[i].setIcon(getImage("baseballCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Trophy")){cards[i].setIcon(getImage("trophyCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Dumbbell")){ cards[i].setIcon(getImage("dumbbellCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Poison")){ cards[i].setIcon(getImage("poisonCard.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Axe")){ cards[i].setIcon(getImage("axeCard.png"));}
+			//Rooms
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Spa")){cards[i].setIcon(getImage("spa.png"));}
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Theatre")){ cards[i].setIcon(getImage("theatre.png"));}		
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Living Room")){ cards[i].setIcon(getImage("lounge.png"));} 
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Observatory")){ cards[i].setIcon(getImage("observatory.png"));}	
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Guest house")){ cards[i].setIcon(getImage("guest.png"));}	
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Dining Room")){cards[i].setIcon(getImage("dining.png"));}	
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Kitchen")){ cards[i].setIcon(getImage("kitchen.png"));}		
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Patio")){ cards[i].setIcon(getImage("patio.png"));}			
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Pool")){ cards[i].setIcon(getImage("pool.png"));}			
+			else if (Game.getCurrent().getHand().get(i).toString().equalsIgnoreCase("Hall")){ cards[i].setIcon(getImage("hall.png")); 			
+			}
+		}
+		grid.setVgap(0);
+		grid.setHgap(0);
+	}
+	
+	public static void suggestionOrAccuse(final boolean accuse){
+		//New Window
+		final JFrame window = new JFrame("Suggestion");
+		if (accuse){
+			window.setTitle("Accusation");
+		}
+		window.setLayout(new BorderLayout());
+		//GROUPS
+		final ButtonGroup ppl = new ButtonGroup();
+		final ButtonGroup weps = new ButtonGroup();
+		final ButtonGroup rooms = new ButtonGroup();
+		//PANELS
+		JPanel topPanel = new JPanel();
+		JPanel pplPanel = new JPanel();
+		JPanel wepsPanel = new JPanel();
+		JPanel roomsPanel = new JPanel();
+		JPanel mainPanel = new JPanel();
+		pplPanel.setPreferredSize(new Dimension(120, 600));
+		wepsPanel.setPreferredSize(new Dimension(120, 600));
+		if (accuse){
+			roomsPanel.setPreferredSize(new Dimension(100,600));
+		}
+		//BUTTONS 
+		for (int i =0; i < Deck.people.length; i++){
+			final JRadioButton butt = new JRadioButton(Deck.people[i]);
+			butt.setActionCommand(Deck.people[i]);
+			ppl.add(butt);
+			pplPanel.add(butt);
+		}
+		for (int i =0; i < Deck.weps.length; i++){
+			final JRadioButton butt = new JRadioButton(Deck.weps[i]);
+			butt.setActionCommand(Deck.weps[i]);
+			weps.add(butt);
+			wepsPanel.add(butt);
+		}
+		if (accuse){
+			for (int i = 0; i < Deck.room.length; i++){
+				final JRadioButton butt = new JRadioButton(Deck.room[i]);
+				butt.setActionCommand(Deck.room[i]);
+				rooms.add(butt);
+				roomsPanel.add(butt);
+			}
+		}
+		JButton done = new JButton("Suggest");
+		if (accuse){
+			done = new JButton("Accuse");
+		}
+		//ADDITIONS
+		JLabel displayText = new JLabel("Characters                      Weapons                       Room: "+Game.getCurrent().getCurrentRoom());
+		if (accuse){
+			displayText = new JLabel("Characters                      Weapons                       Rooms");
+		}
+		topPanel.add(displayText);
+		mainPanel.add(pplPanel, BorderLayout.WEST);
+		mainPanel.add(wepsPanel, BorderLayout.CENTER);
+		if (accuse){
+			mainPanel.add(roomsPanel, BorderLayout.EAST);
+		}
+		window.add(topPanel, BorderLayout.NORTH);
+		window.add(mainPanel, BorderLayout.WEST);
+		window.add(done, BorderLayout.SOUTH);
+		//Window Features
+		window.setSize(400,400);
+		window.setResizable(false);
+		//Position
+		window.setBounds(screenSize.width/2 - window.getWidth()/2, imageHeight/2 - window.getHeight()/2, window.getWidth(), window.getHeight());
+		window.setVisible(true);
+
+		done.addActionListener(new ActionListener(){				//DONE BUTTON
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				//ACCUSATION - all button groups must be selected... i.e. wep, room and murderer
+				if (ppl.getSelection() != null && weps.getSelection() != null && rooms.getSelection() != null){
+					readSelectedCards(ppl,weps,rooms, true, window);
+				}
+				//SUGGESTION - all button groups must be selected except for room, i.e. wep and murderer
+				else if (!accuse && ppl.getSelection() != null && weps.getSelection() != null){
+					readSelectedCards(ppl,weps,rooms,false, window);
+				}
+			}
+		});
+	}
+
+	public static void readSelectedCards(ButtonGroup ppl, ButtonGroup weps, ButtonGroup rooms, boolean accuse, JFrame window){
+		String name = null;
+		String room = null;
+		String weapon = null;
+		if(ppl.getSelection().getActionCommand().equalsIgnoreCase("Kasandra Scarlett")){name = "Kasandra Scarlett";}
+		else if (ppl.getSelection().getActionCommand().equalsIgnoreCase("Jack Mustard")){name = "Jack Mustard";}
+		else if (ppl.getSelection().getActionCommand().equalsIgnoreCase("Diane White")){name = "Diane White";}
+		else if (ppl.getSelection().getActionCommand().equalsIgnoreCase("Jacob Green")){name = "Jacob Green";}
+		else if (ppl.getSelection().getActionCommand().equalsIgnoreCase("Eleanor Peacock")){name = "Eleanor Peacock";}
+		else if (ppl.getSelection().getActionCommand().equalsIgnoreCase("Victor Plum")){name = "Victor Plum";}
+		System.out.println(weps.getSelection().getActionCommand());
+		if (weps.getSelection().getActionCommand().equalsIgnoreCase("Rope")){weapon = "Rope";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Axe")){weapon = "Axe";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Poison")){weapon = "Poison";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Trophy")){weapon = "Trophy";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Knife")){weapon = "Knife";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Baseball Bat")){weapon = "Baseball Bat";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Candlestick")){weapon = "Candlestick";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Pistol")){weapon = "Pistol";}
+		else if (weps.getSelection().getActionCommand().equalsIgnoreCase("Dumbbell")){weapon = "Dumbbell";}
+		if (accuse){
+			if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Spa")){room = "Spa";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Theatre")){room = "Theatre";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Living Room")){room = "Living Room";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Observatory")){room = "Observatory";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Hall")){room = "Hall";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Guest Room")){room = "Guest Room";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Dining Room")){room = "Dining Room";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Kitchen")){room = "Kitchen";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Patio")){room = "Patio";}
+			else if (rooms.getSelection().getActionCommand().equalsIgnoreCase("Pool")){room = "Pool";}
+		}
+		window.dispose();
+		if(accuse){
+			Game.getCurrent().readSuggestionsOrAccusationsGUI(false, name, weapon, room);
+			Game.getCurrent().accusation(12, 14);
+		}
+		else{
+			Game.getCurrent().readSuggestionsOrAccusationsGUI(true, name, weapon, room);
+			Game.getCurrent().suggestion();
+			outer.moveWeapon(Game.getCurrent().getCurrentRoom(), weapon);
+			outer.redraw();
+		}
+	}
+	
+
+	public static JFrame getFrame(){
+		return frame;
+	}
+	public static Game getGame(){
+		return game;
+	}
+	
+	
+}
